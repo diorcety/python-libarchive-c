@@ -100,6 +100,28 @@ def test_custom_writer():
     with libarchive.memory_reader(buf) as archive:
         check_archive(archive, tree)
 
+def test_custom_reader():
+
+    # Collect information on what should be in the archive
+    tree = treestat('libarchive')
+
+    # Create an archive of our libarchive/ directory
+    blocks = []
+
+    def write_cb(data):
+        blocks.append(data[:])
+        return len(data)
+
+    with libarchive.custom_writer(write_cb, 'zip') as archive:
+        archive.add_files('libarchive/')
+        pass
+
+    # Read the archive and check that the data is correct
+    def read_cb():
+        return blocks.pop(0)
+    with libarchive.custom_reader(read_cb, 'zip') as archive:
+        check_archive(archive, tree)
+
 
 @patch('libarchive.ffi.write_fail')
 def test_write_fail(write_fail_mock):

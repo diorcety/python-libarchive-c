@@ -1,11 +1,13 @@
 from __future__ import division, print_function, unicode_literals
 
 from contextlib import contextmanager
-from ctypes import cast, c_void_p
+from ctypes import cast, create_string_buffer, c_char, c_void_p, POINTER
 from os import fstat, stat
 
 from . import ffi
-from .ffi import ARCHIVE_EOF
+from .ffi import (
+    OPEN_CALLBACK, READ_CALLBACK, CLOSE_CALLBACK, VOID_CB, ARCHIVE_EOF
+)
 from .entry import ArchiveEntry, new_archive_entry
 
 
@@ -41,6 +43,30 @@ def new_archive_read(format_name='all', filter_name='all'):
         yield archive_p
     finally:
         ffi.read_free(archive_p)
+
+@contextmanager
+def custom_reader(
+        read_func, format_name='all', filter_name='all',
+        open_func=VOID_CB, close_func=VOID_CB,
+        archive_read_class=ArchiveRead
+):
+
+   
+
+    def read_cb_internal(archive_p, context, buffer_):
+        data = read_func()
+        ptr = create_string_buffer(data)
+        pptr = cast(buffer_, POINTER(POINTER(c_char)))
+        pptr[0] = ptr
+        return len(data)
+
+    open_cb = OPEN_CALLBACK(open_func)
+    read_cb = READ_CALLBACK(read_cb_internal)
+    close_cb = CLOSE_CALLBACK(close_func)
+
+    with new_archive_read(format_name, filter_name) as archive_p:
+        ffi.read_open(archive_p, None, open_cb, read_cb, close_cb)
+        yield archive_read_class(archive_p)
 
 
 @contextmanager
