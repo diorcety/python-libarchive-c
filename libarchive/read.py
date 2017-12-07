@@ -55,7 +55,7 @@ def custom_reader(
 
     def read_cb_internal(archive_p, context, buffer_):
         data = read_func()
-        ptr = (c_char * len(data)).from_buffer(data)
+        ptr = (c_char * len(data)).from_buffer_copy(data)
         pptr = cast(buffer_, POINTER(POINTER(c_char)))
         pptr[0] = ptr
         return len(data)
