@@ -15,6 +15,7 @@ from ctypes.util import find_library
 import logging
 import mmap
 import os
+import sys
 
 from .exception import ArchiveError
 
@@ -23,9 +24,22 @@ logger = logging.getLogger('libarchive')
 
 page_size = mmap.PAGESIZE
 
-libarchive_path = os.environ.get('LIBARCHIVE') or find_library('archive')
-libarchive = ctypes.cdll.LoadLibrary(libarchive_path)
-
+try:
+    # If LD_LIBRARY_PATH or your OSs equivalent is set, this is the only way to
+    # load the library.  If we use find_library below, we get the wrong result.
+    if os.name == 'posix':
+        if sys.platform == 'darwin':
+            libpath = 'libarchive.dylib'
+        else:
+            libpath = 'libarchive.so'
+    elif os.name == 'nt':
+        libpath = 'libarchive.dll'
+    libarchive = ctypes.cdll.LoadLibrary(libpath)
+except OSError:
+    libpath = find_library("archive")
+    if not libpath:
+        raise ImportError("Unable to find archive")
+    libarchive = ctypes.cdll.LoadLibrary(libpath)
 
 # Constants
 
