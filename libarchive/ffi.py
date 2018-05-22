@@ -29,9 +29,9 @@ try:
     # load the library.  If we use find_library below, we get the wrong result.
     if os.name == 'posix':
         if sys.platform == 'darwin':
-            libpath = 'libarchive.dylib'
+            libpath = 'libarchive.16.dylib'
         else:
-            libpath = 'libarchive.so'
+            libpath = 'libarchive.so.16'
     elif os.name == 'nt':
         libpath = 'archive.dll'
     libarchive = ctypes.cdll.LoadLibrary(libpath)
